@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import data.Parameter;
+import data.Parameters;
 import data.Fortress;
 import data.Listener;
 import data.Message_Queue;
@@ -32,8 +32,9 @@ public class Server_Logic extends Thread {
 	private Place_Fortress place = new Place_Fortress();
 	private Server_Data data;
 	private Server_Logic logic;
-	private static final int myport = Parameter.server_port;
-	private Message_Queue q, world_queue;
+	private static final int myport = Parameters.server_port;
+	private Message_Queue<DatagramPacket> q, world_queue;
+	private Message_Queue<Special_Settings> settings_queue;
 	private Check_Timeout timeout;
 	private Sequence_Number seq;
 	private DatagramSocket listener_socket;
@@ -48,7 +49,7 @@ public class Server_Logic extends Thread {
 	
 	public Server_Logic() {};
 	
-	public Server_Logic(Message_Queue q, Server_Data data, Sequence_Number seq, Listener listener, Check_Timeout timeout, ExecutorService pool, int id){
+	public Server_Logic(Message_Queue<DatagramPacket> q, Server_Data data, Sequence_Number seq, Listener listener, Check_Timeout timeout, ExecutorService pool, int id){
 		this.world_queue = q;
 		this.data = data;
 		this.seq = seq;
@@ -57,10 +58,12 @@ public class Server_Logic extends Thread {
 		this.world_pool = pool;
 		this.id = id;
 	}
+
 	
 	public static void main (String [] args) {
 		Server_Logic server = new Server_Logic();
 		server.start_server();
+		
 	}
 	/**
 	 * Start server logic including all surrounding classes
@@ -68,7 +71,7 @@ public class Server_Logic extends Thread {
 	public void start_server() {
 		try {
 			main_pool = Executors.newCachedThreadPool();
-			q = new Message_Queue();
+			q = new Message_Queue<DatagramPacket>();
 			listener_socket = new DatagramSocket(myport);
 			listener = new Listener(q, listener_socket);
 			main_pool.execute(listener);
@@ -78,13 +81,19 @@ public class Server_Logic extends Thread {
 			stop_server();
 		} 
 	}
+
+
 	
+	/**
+	 * Create a new map 
+	 * @param n
+	 */
 	public void create_world(int n) {
 		data = new Server_Data();
 		data.init_map();
 		seq = new Sequence_Number(0);
 		timeout = new Check_Timeout(myport, data, seq, n);
-		world_queue = new Message_Queue();
+		world_queue = new Message_Queue<DatagramPacket>();
 		world_pool = Executors.newCachedThreadPool();
 		pools.add(world_pool);
 		world = new World(data, seq, timeout, world_queue, n);
@@ -103,7 +112,7 @@ public class Server_Logic extends Thread {
 	public void handle_worlds() throws InterruptedException {
 		Set<String> messages = new HashSet<String>();
 		while(logic_flag) {
-			if(messages.size() > Parameter.max_message_queue_size) {
+			if(messages.size() > Parameters.max_message_queue_size) {
 				messages.clear();
 			}
 			DatagramPacket packet;
@@ -113,7 +122,7 @@ public class Server_Logic extends Thread {
 					String message = new String(packet.getData(), 0, packet.getLength());
 					World tmp_world = worlds.get(worlds.size()-1);
 					int world_id;
-					if(tmp_world.getData().players == Parameter.max_players && message.charAt(0) == '0') {
+					if(tmp_world.getData().players == Parameters.max_players && message.charAt(0) == '0') {
 						create_world(worlds.size());	
 					}
 					if(message.charAt(0) == '0') {
@@ -124,7 +133,7 @@ public class Server_Logic extends Thread {
 						sb.append(tmp);
 						world_id = Integer.valueOf(sb.toString());
 					}
-					Message_Queue tmp_queue = worlds.get(world_id).getWorld_queue();
+					Message_Queue<DatagramPacket> tmp_queue = worlds.get(world_id).getWorld_queue();
 					tmp_queue.messages.put(packet);
 				}
 			}
@@ -135,10 +144,10 @@ public class Server_Logic extends Thread {
 	 * Every world handles their incoming messages
 	 */
 	public void run() {
-		world_pool.execute(timeout);
+		settings_queue = new Message_Queue<Special_Settings>();
 		Set<String> messages = new HashSet<String>();
 		while(world_flag) {
-			if(messages.size() > Parameter.max_message_queue_size) {
+			if(messages.size() > Parameters.max_message_queue_size) {
 				messages.clear();
 			}
 			DatagramPacket packet;
@@ -196,18 +205,24 @@ public class Server_Logic extends Thread {
 	 * @param message
 	 */
 	public void register_user(String port, DatagramPacket message) {
+		if(data.players == 0) {
+			timeout.setSettings_queue(settings_queue);
+			world_pool.execute(timeout);
+		}
 		inform_player(port, 1);
 		User new_user = new User(message.getAddress().toString(), Integer.valueOf(port));
 		String[][] update_map = data.getMap();			
 		Tuple coordinate = place.find_spot(update_map, data.map_size, data.map_size);
-		Fortress fort = new Fortress(coordinate.x_toString(), coordinate.y_toString(), new_user);
-		data.fortresses.add(fort);
-		data.players++;
-		update_map[coordinate.getX()][coordinate.getY()] = port;
-		data.setMap(update_map);
-		data.users.add(new_user);
-		inform_players_of_new_player(fort);
-		inform_new_player_of_players(new_user);
+		if(coordinate != null) {
+			Fortress fort = new Fortress(coordinate.x_toString(), coordinate.y_toString(), new_user);
+			data.fortresses.add(fort);
+			data.players++;
+			update_map[coordinate.getX()][coordinate.getY()] = port;
+			data.setMap(update_map);
+			data.users.add(new_user);
+			inform_players_of_new_player(fort);
+			inform_new_player_of_players(new_user);
+		}
 	}
 	
 	/**
@@ -325,7 +340,14 @@ public class Server_Logic extends Thread {
 		}
 		else if(string_message.charAt(0) == '7'){
 			String port = string_message.substring(6, 10);
+			User user = data.findUser(Integer.valueOf(port));
+			user.setSettings(true);
 			settings = new Special_Settings(Integer.valueOf(port), myport, seq, id);
+			try {
+				settings_queue.messages.put(settings);
+			} catch (InterruptedException e) {
+				System.out.println("Shutting down server logic,");
+			}
 			world_pool.execute(settings);
 		}
 	}

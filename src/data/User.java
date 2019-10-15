@@ -12,6 +12,7 @@ public class User {
 	public int id;
 	public boolean alive = true;
 	public boolean active = true;
+	public boolean settings = false;
 	
 	public User() {
 		
@@ -74,6 +75,14 @@ public class User {
 
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	public boolean isSettings() {
+		return settings;
+	}
+
+	public void setSettings(boolean settings) {
+		this.settings = settings;
 	}
 	
 	

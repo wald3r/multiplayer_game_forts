@@ -3,14 +3,14 @@ package data;
 import java.util.ArrayList;
 import java.util.List;
 
-import data.Parameter;
+import data.Parameters;
 
 public class Data {
 
 	public String[][] map;
 	public List<Fortress> fortresses = new ArrayList<Fortress>();
-	public int map_size = Parameter.map_size;
-	public final int max_amount_players = Parameter.max_players;
+	public int map_size = Parameters.map_size;
+	public int max_amount_players = Parameters.max_players;
 	public List<User> users = new ArrayList<User>();
 	public int players = 0;
 	

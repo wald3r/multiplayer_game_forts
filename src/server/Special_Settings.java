@@ -3,7 +3,7 @@ package server;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import data.Sequence_Number;
-import data.Parameter;
+import data.Parameters;
 
 /**
 * Special settings class to send data to the client.
@@ -33,7 +33,7 @@ public class Special_Settings extends Thread{
 	public void run() {
 		while(keep_running.get()) {
 			try {
-				Thread.sleep(Parameter.special_settings_waiting_time);
+				Thread.sleep(Parameters.special_settings_waiting_time);
 				sender = new Server_Sender(this.serverport, this.myport, seq, id);
 				sender.setMessage_number(5);
 				sender.start();	
@@ -44,4 +44,14 @@ public class Special_Settings extends Thread{
 		}
 		
 	}
+
+	public int getServerport() {
+		return serverport;
+	}
+
+	public void setServerport(int serverport) {
+		this.serverport = serverport;
+	}
+
+
 }

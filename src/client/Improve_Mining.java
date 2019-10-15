@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import data.Fortress;
 import data.Sequence_Number;
-import data.Parameter;
+import data.Parameters;
 
 /**
  * Improve mining class. Improve the mining level of a fortress
@@ -31,10 +31,10 @@ public class Improve_Mining extends Thread {
 	 * Improves mining level if there are enough resources stored and some time has passed. Server gets informed afterwards. 
 	 */
 	public void run() {
-		if(fort.getResources() > (Parameter.improve_mining_costs*fort.getMining_level())) {			
+		if(fort.getResources() > (Parameters.improve_mining_costs*fort.getMining_level())) {			
 			try {
-				fort.setResources(fort.getResources()-(Parameter.improve_mining_costs*fort.getMining_level()));
-				Thread.sleep(Parameter.improve_mining_time);
+				fort.setResources(fort.getResources()-(Parameters.improve_mining_costs*fort.getMining_level()));
+				Thread.sleep(Parameters.improve_mining_time);
 				fort.setMining_level(fort.getMining_level()+1);
 				sender = new Client_Sender(this.serverport, this.myport, this.fort, this.seq, world_id);
 				sender.setMessage_number(2);

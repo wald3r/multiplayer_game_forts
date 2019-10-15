@@ -25,9 +25,9 @@ public class Client_Logic extends Thread {
 	private Client_Sender sender;
 	private User_Interface user_interface;
 	private Registration registration;
-	private int myport = 4000-1;
+	private static int myport;
 	private final int serverport = 5000;
-	private Message_Queue q;
+	private Message_Queue<DatagramPacket> q;
 	private Mine_Resources mine;
 	private Alive_Message alive;
 	private Sequence_Number seq;
@@ -39,13 +39,11 @@ public class Client_Logic extends Thread {
 	
 	
 	
-	public Client_Logic() {
-	}
+	public Client_Logic() {}
 	
-	public Client_Logic(int myport, Message_Queue q, Listener listener, Client_Data data, Sequence_Number seq, Alive_Message alive, Registration reg, DatagramSocket socket, User_Interface user_interface, ExecutorService pool) {
+	public Client_Logic( Message_Queue<DatagramPacket> q, Listener listener, Client_Data data, Sequence_Number seq, Alive_Message alive, Registration reg, DatagramSocket socket, User_Interface user_interface, ExecutorService pool) {
 		this.listener = listener;
 		this.data = data;
-		this.myport = myport;
 		this.q = q;
 		this.seq = seq;
 		this.alive = alive;
@@ -61,7 +59,14 @@ public class Client_Logic extends Thread {
 	 */
 	public static void main (String [] args) {
 		
-		if (args.length == 2) {
+		if(args.length > 0) {
+			myport = Integer.valueOf(args[0].toString());
+		}else {
+			System.out.println("Not enough arguments! ");
+			return;
+		}
+		
+		if (args.length == 2) {	
 			settings = true;
 		}else {
 			settings = false;
@@ -99,7 +104,7 @@ public class Client_Logic extends Thread {
 		
 		data = new Client_Data();
 		data.init_map();
-		q = new Message_Queue();
+		q = new Message_Queue<DatagramPacket>();
 		seq = new Sequence_Number(0);
 		
 		try {
@@ -110,7 +115,7 @@ public class Client_Logic extends Thread {
 			alive = new Alive_Message(serverport, myport, seq);
 			user_interface = new User_Interface(serverport, myport, data, seq, pool);
 			sender = new Client_Sender(serverport, myport, seq);
-			Client_Logic logic = new Client_Logic(myport, q, listener, data, seq, alive, registration, socket, user_interface, pool);
+			Client_Logic logic = new Client_Logic(q, listener, data, seq, alive, registration, socket, user_interface, pool);
 			System.out.println("Start registering...");
 			registration.start();
 			pool.execute(logic);

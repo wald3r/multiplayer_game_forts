@@ -6,7 +6,7 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import data.Fortress;
-import data.Parameter;
+import data.Parameters;
 import data.Sequence_Number;
 
 
@@ -50,10 +50,12 @@ public class User_Interface extends Thread {
 		while(keep_running.get()) {
 			data.print_map();
 			data.print_fortresses();
+			System.out.println("Soldier production costs/time: "+Parameters.soldier_production_costs+"/"+Parameters.soldier_production_time+"   Improve mining costs/time: "+Parameters.improve_mining_costs+"*Mining level/"+Parameters.improve_mining_time);
+			System.out.println("");
 			System.out.println("1. Attack");
 			System.out.println("2. Improve Mining");
 			System.out.println("3. Produce Attack Soldiers");
-			System.out.println("4. Produce Defending Soldiers");
+			System.out.println("4. Produce Defence Soldiers");
 			System.out.println("5. Update View!");
 			System.out.println("Make your move:");
 			sc = new Scanner(System.in); 
@@ -111,32 +113,38 @@ public class User_Interface extends Thread {
 	 * interface to attack a fort
 	 */
 	public void interface_attack_fort() {
-		System.out.println("From which fort?");
+		System.out.println("From which fort? Type in Fortress Number:");
 		int forts = data.getMyFortressesCounter();
 		sc = new Scanner(System.in);
 		int n = sc.nextInt();
 		if(n < forts && n > -1) {
+			
 			System.out.println("Which fort you wish to attack? Type in position like this: 00/00");
 			sc = new Scanner(System.in);
 			String position = sc.nextLine();
 			if(position.length() == 5) {
 				String x = position.substring(0,2);
 				String y = position.substring(3,5);
-				Fortress attackfort = data.getFort(x, y);
-				if(attackfort != null) {
-					System.out.println("With how many Soldiers?");
-					sc = new Scanner(System.in);
-					int amount;
-					while(true) {
-						amount = sc.nextInt();
-						if(data.getFortresses().get(n).getAttacking_soldiers() >= amount) {
-							break;
+				if(!data.isMyFortress(x,  y)) {
+					Fortress attackfort = data.getFort(x, y);
+					if(attackfort != null) {
+						System.out.println("With how many Soldiers?");
+						sc = new Scanner(System.in);
+						int amount;
+						while(true) {
+							amount = sc.nextInt();
+							if(data.getFortresses().get(n).getAttacking_soldiers() >= amount) {
+								break;
+							}
 						}
+						logic_attack_fort(attackfort, data.getFortresses().get(n), amount);
+						
+					}else {
+						System.out.println("There is no fort!");
 					}
-					logic_attack_fort(attackfort, data.getFortresses().get(n), amount);
-					
-				}else {
-					System.out.println("There is no fort!");
+				}
+				else {
+					System.out.println("This is your own fort!");
 				}
 			}else {
 				System.out.println("Wrong input!");
@@ -155,11 +163,18 @@ public class User_Interface extends Thread {
 		int forts = data.getMyFortressesCounter();
 		sc = new Scanner(System.in);
 		int n = sc.nextInt();
+		System.out.println(forts);
 		if(n < forts && n > -1) {
-			System.out.println("How many?");
-			sc = new Scanner(System.in);
-			int amount = sc.nextInt();
-			if(data.myFortresses.get(n).getResources() > Parameter.soldier_production_costs*amount) {
+			int amount;
+			while(true) {
+				System.out.println("How many?");
+				sc = new Scanner(System.in);
+				amount = sc.nextInt();
+				if(amount > -1) {
+					break;
+				}
+			}
+			if(data.myFortresses.get(n).getResources() > Parameters.soldier_production_costs*amount) {
 				produce_soldiers(n, amount, type);
 			}else {
 				System.out.println("Not enough resources!");
@@ -178,6 +193,7 @@ public class User_Interface extends Thread {
 		int forts = data.getMyFortressesCounter();
 		sc = new Scanner(System.in); 
 		int n = sc.nextInt();
+		System.out.println(n+" "+forts);
 		if(n < forts && n > -1) {
 			logic_improve_mining(n);
 		}else {

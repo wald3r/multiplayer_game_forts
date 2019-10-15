@@ -1,6 +1,6 @@
 package data;
 
-import data.Parameter;
+import data.Parameters;
 
 
 /**
@@ -23,10 +23,10 @@ public class Fortress {
 		this.x_position = x;
 		this.y_position = y;
 		this.user = user;
-		this.resources = Parameter.start_resources;
-		this.mining_level = Parameter.start_mining_level;
-		this.defending_soldiers = Parameter.start_defending_soldiers;
-		this.attacking_soldiers = Parameter.start_attacking_soldiers;
+		this.resources = Parameters.start_resources;
+		this.mining_level = Parameters.start_mining_level;
+		this.defending_soldiers = Parameters.start_defending_soldiers;
+		this.attacking_soldiers = Parameters.start_attacking_soldiers;
 	}
 
 	public User getUser() {
@@ -66,7 +66,11 @@ public class Fortress {
 	}
 
 	public void setResources(int resources) {
-		this.resources = resources;
+		if(this.resources == 9999) {
+			
+		}else {
+			this.resources = resources;
+		}
 	}
 
 	public int getMining_level() {
@@ -82,7 +86,11 @@ public class Fortress {
 	}
 
 	public void setDefending_soldiers(int defending_soldiers) {
-		this.defending_soldiers = defending_soldiers;
+		if(this.defending_soldiers == 9999) {
+			
+		}else {
+			this.defending_soldiers = defending_soldiers;
+		}
 	}
 
 	public int getAttacking_soldiers() {
@@ -90,7 +98,11 @@ public class Fortress {
 	}
 
 	public void setAttacking_soldiers(int attacking_soldiers) {
-		this.attacking_soldiers = attacking_soldiers;
+		if(this.attacking_soldiers == 9999) {
+			
+		}else {
+			this.attacking_soldiers = attacking_soldiers;
+		}
 	}
 	
 	public String toString() {

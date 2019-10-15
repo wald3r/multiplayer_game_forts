@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import data.Fortress;
 import data.Sequence_Number;
-import data.Parameter;
+import data.Parameters;
 
 
 /**
@@ -38,11 +38,11 @@ public class Build_Soldiers extends Thread {
 	 */
 	public void run() {
 		int x = 0;
-		fort.setResources(fort.getResources()-(Parameter.soldier_production_costs*amount));
+		fort.setResources(fort.getResources()-(Parameters.soldier_production_costs*amount));
 		while(x < amount) {
 			x++;
 			try {
-				Thread.sleep(Parameter.soldier_production_time);
+				Thread.sleep(Parameters.soldier_production_time);
 				if(number == 1) {
 					fort.setAttacking_soldiers(fort.getAttacking_soldiers()+1);
 				}else {

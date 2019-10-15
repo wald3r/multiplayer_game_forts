@@ -36,7 +36,7 @@ public class Attack_Fort extends Thread{
 	
 		try {
 			myfort.setAttacking_soldiers(myfort.getAttacking_soldiers()-amount);
-			Thread.sleep(time*1000);
+			Thread.sleep(time*10000);
 			sender = new Client_Sender(serverport, myport, attackfort, seq, amount, world_id);
 			sender.setMessage_number(1);
 			sender.start();

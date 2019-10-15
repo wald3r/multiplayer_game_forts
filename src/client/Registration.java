@@ -3,7 +3,7 @@ package client;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import data.Sequence_Number;
-import data.Parameter;
+import data.Parameters;
 
 /**
 * Registration class of the client. Tries to register the client to the server
@@ -35,10 +35,10 @@ public class Registration extends Thread {
 		try {
 			data.registered.set(false);
 			int x = 0;
-			while(x < Parameter.registration_tries) {
+			while(x < Parameters.registration_tries) {
 				sender = new Client_Sender(serverport, myport, seq);
 				sender.start();
-				Thread.sleep(Parameter.registration_waiting_time);
+				Thread.sleep(Parameters.registration_waiting_time);
 				if(received.get()) {
 					break;
 				}else {

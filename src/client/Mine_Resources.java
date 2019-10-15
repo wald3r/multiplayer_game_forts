@@ -1,7 +1,7 @@
 package client;
 
 import data.Fortress;
-import data.Parameter;
+import data.Parameters;
 
 /**
 * Mine resources class. Mine resources and update the fortress
@@ -25,7 +25,7 @@ public class Mine_Resources extends Thread {
 		
 		while(alive.keep_running.get()) {
 			try {
-				Thread.sleep(Parameter.mine_resources_time);
+				Thread.sleep(Parameters.mine_resources_time);
 				fort.setResources(fort.getResources()+1*fort.getMining_level());
 			} catch (InterruptedException e) {
 				System.out.println("Shutting down mine resources.");

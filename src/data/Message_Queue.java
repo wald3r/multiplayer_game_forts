@@ -1,6 +1,5 @@
 package data;
 
-import java.net.DatagramPacket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -9,15 +8,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 * @author walder daniel - 015153159
 * 
 */
-public class Message_Queue {
+public class Message_Queue <T> {
 
-	public BlockingQueue<DatagramPacket> messages = new LinkedBlockingQueue<DatagramPacket>();
+	public BlockingQueue<T> messages = new LinkedBlockingQueue<T>();
 
-	public BlockingQueue<DatagramPacket> getQueue() {
+	public BlockingQueue<T> getQueue() {
 		return messages;
 	}
 
-	public void setQueue(BlockingQueue<DatagramPacket> queue) {
+	public void setQueue(BlockingQueue<T> queue) {
 		this.messages = queue;
 	}
 	

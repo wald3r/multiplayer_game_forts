@@ -104,6 +104,15 @@ public class Client_Data extends Data {
 		return null;
 	}
 	
+	public boolean isMyFortress(String x, String y) {
+		for(int i = 0; i < myFortresses.size(); i++) {
+			if(myFortresses.get(i).getX_position().equals(x) && myFortresses.get(i).getY_position().equals(y)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	
 	public List<Fortress> getMyFortresses() {
 		return myFortresses;

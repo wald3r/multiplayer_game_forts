@@ -4,7 +4,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Random;
-import data.Parameter;
+import data.Parameters;
 /**
 * Protocol class to communicate between server and client. 
 * @author walder daniel - 015153159
@@ -14,7 +14,7 @@ public class Protocol {
 
 	private DatagramSocket sender;
 	private DatagramSocket listener;
-	private byte[] buf = new byte[Parameter.message_size];
+	private byte[] buf = new byte[Parameters.message_size];
 	private InetAddress address;
 	private int serverport;
 	private int clientport;
@@ -65,20 +65,19 @@ public class Protocol {
 		reset_buffer();
 		buf = message.getBytes();
 		try {
-			for(int i = 0; i < Parameter.fec_redundant_method; i++) {
+			for(int i = 0; i < Parameters.fec_redundant_method; i++) {
 				Random rand = new Random();
 				int likely = rand.nextInt(100);
 				likely += 1;
-				if(likely > Parameter.message_loss) {
-					if(serverport != Parameter.server_port) {
+				if(likely > Parameters.message_loss) {
+					if(serverport != Parameters.server_port) {
 						System.out.println("MESSAGE to "+this.serverport+": "+message);
 					}
 					this.sender.send(new DatagramPacket(buf, buf.length, this.address, this.serverport));
 				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Shutting down protocol.");
 		}
 	}
 	
@@ -219,9 +218,8 @@ public class Protocol {
 		try {
 			listener.receive(packet);
 		} catch (IOException e) {
-			System.out.println("receiving socket got closed");
 		}
-		if(listener.getLocalPort() == Parameter.server_port) {
+		if(listener.getLocalPort() == Parameters.server_port) {
 			System.out.println("MESSAGE received: "+new String(packet.getData(), 0, packet.getLength()));
 		}
 		return packet;
@@ -230,6 +228,6 @@ public class Protocol {
 	 * Reset the buffer
 	 */
 	public void reset_buffer() {
-		buf = new byte[Parameter.message_size];
+		buf = new byte[Parameters.message_size];
 	}
 }

@@ -3,7 +3,6 @@ package data;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import data.Parameter;
 /**
 * Listener class. Client or Server listens to incoming messages
 * @author walder daniel - 015153159
@@ -15,9 +14,9 @@ public class Listener extends Thread {
 	private boolean running = false;
 	private DatagramPacket packet;
 	private Protocol protocol;
-	private Message_Queue q;
+	private Message_Queue<DatagramPacket> q;
 	
-	public Listener (Message_Queue q, DatagramSocket listener) throws IOException {
+	public Listener (Message_Queue<DatagramPacket> q, DatagramSocket listener) throws IOException {
 		this.listener =listener;
 		this.protocol = new Protocol(this.listener);
 		this.q = q;

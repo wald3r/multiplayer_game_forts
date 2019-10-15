@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import data.Parameter;
+import data.Parameters;
 import data.Fortress;
 import data.Message_Queue;
 import data.Sequence_Number;
@@ -29,14 +29,14 @@ public class Rebel_Logic extends Thread {
 	private Client_Data data;
 	private int myport;
 	private final int serverport = 5000;
-	private Message_Queue q;
+	private Message_Queue<DatagramPacket> q;
 	private Mine_Resources mine;
 	private Improve_Mining improve_mining;
 	private Build_Soldiers build_attack_soldiers;
 	private boolean flag;
 	private Sequence_Number seq;
 	private Alive_Message alive;
-	public static boolean logic = true;
+	public boolean logic;
 	private DatagramSocket socket;
 	private ExecutorService pool;
 	private static boolean settings;
@@ -47,7 +47,7 @@ public class Rebel_Logic extends Thread {
 		this.myport = myport;
 	}
 	
-	public Rebel_Logic(Listener listener, Client_Data data, Message_Queue q, int myport, boolean flag, Sequence_Number seq, Alive_Message alive, Registration reg, DatagramSocket socket, ExecutorService pool) {
+	public Rebel_Logic(Listener listener, Client_Data data, boolean logic, Message_Queue<DatagramPacket> q, int myport, boolean flag, Sequence_Number seq, Alive_Message alive, Registration reg, DatagramSocket socket, ExecutorService pool) {
 		this.listener = listener;
 		this.data = data;
 		this.q = q;
@@ -58,13 +58,23 @@ public class Rebel_Logic extends Thread {
 		this.registration = reg;
 		this.socket = socket;
 		this.pool = pool;
+		this.logic = logic;
 	}
 	
 	
 	public static void main (String [] args) {
 		
-		int port = 4006;
-		int number_of_clients = Parameter.number_rebels;
+		int port;
+		int number_of_clients;
+		
+		if(args.length == 2) {
+			port = Integer.valueOf(args[0].toString());
+			number_of_clients = Integer.valueOf(args[1].toString());
+		}else {
+			System.out.println("Not enough arguments! ");
+			return;
+		}
+		
 		
 		settings = false;
 		for(int i = 0; i < number_of_clients; i++) {
@@ -73,7 +83,7 @@ public class Rebel_Logic extends Thread {
 			} catch (InterruptedException e) {
 				System.out.println("Shutting down rebel logic.");
 			}
-			//settings = !settings;
+			settings = !settings;
 			new Rebel_Logic(port++).start_client();
 		}
 		
@@ -98,7 +108,7 @@ public class Rebel_Logic extends Thread {
 		
 		data = new Client_Data();
 		data.init_map();
-		q = new Message_Queue();
+		q = new Message_Queue<DatagramPacket>();
 		seq = new Sequence_Number(0);
 		
 		try {
@@ -108,8 +118,8 @@ public class Rebel_Logic extends Thread {
 			listener = new Listener(q, socket);
 			alive = new Alive_Message(serverport, myport, seq);
 			sender = new Client_Sender(serverport, myport, seq);
-			Rebel_Logic logic1 = new Rebel_Logic(listener, data, q, myport, false, seq, alive, registration, socket, pool);
-			Rebel_Logic logic2 = new Rebel_Logic(listener, data, q, myport, true, seq, alive, registration, socket, pool);
+			Rebel_Logic logic1 = new Rebel_Logic(listener, data, true, q, myport, false, seq, alive, registration, socket, pool);
+			Rebel_Logic logic2 = new Rebel_Logic(listener, data, true, q, myport, true, seq, alive, registration, socket, pool);
 			registration.start();
 			pool.execute(logic1);
 			pool.execute(listener);
@@ -138,7 +148,7 @@ public class Rebel_Logic extends Thread {
 		if(this.flag) {
 			while(logic) {
 				try {
-					Thread.sleep(Parameter.rebel_logic_waiting_time);
+					Thread.sleep(Parameters.rebel_logic_waiting_time);
 				} catch (InterruptedException e) {
 					System.out.println("Shutting down rebel logic.");
 				}
@@ -190,18 +200,23 @@ public class Rebel_Logic extends Thread {
 				User new_user = new User(Integer.valueOf(port));
 				Fortress fort = new Fortress(x_pos, y_pos, new_user);
 				String[][] update_map = data.getMap();
-				boolean added_myforts = data.already_added_myforts(x_pos, y_pos);
-				Fortress fort_exist = data.getFort(x_pos, y_pos);
-				if(Integer.valueOf(port) == myport && !added_myforts) {
-					data.addToMyFortresses(fort);
-					update_map[Integer.valueOf(x_pos)][Integer.valueOf(y_pos)] = "XXXX";
-					start_mining(fort);
-				}else if(!added_myforts) {
-					update_map[Integer.valueOf(x_pos)][Integer.valueOf(y_pos)] = port;
-				}
-				if(fort_exist == null) {
-					data.fortresses.add(fort);
-					data.setMap(update_map);
+				boolean added_myforts;
+				Fortress fort_exist;
+				synchronized(data) {
+					added_myforts = data.already_added_myforts(x_pos, y_pos);
+					fort_exist = data.getFort(x_pos, y_pos);
+				
+					if(Integer.valueOf(port) == myport && !added_myforts) {
+						data.addToMyFortresses(fort);
+						update_map[Integer.valueOf(x_pos)][Integer.valueOf(y_pos)] = "XXXX";
+						start_mining(fort);
+					}else if(!added_myforts) {
+						update_map[Integer.valueOf(x_pos)][Integer.valueOf(y_pos)] = port;
+					}
+					if(fort_exist == null) {
+						data.fortresses.add(fort);
+						data.setMap(update_map);
+					}
 				}
 			}
 			else if(string_message.charAt(0) == '4'){
@@ -239,7 +254,7 @@ public class Rebel_Logic extends Thread {
 	public void after_attack(int x, int y, int attacking, int defending, int winner, int level) {
 		for(int i = 0; i < data.getFortresses().size(); i++) {
 			if(data.getFortresses().get(i).getX_positionAsInt() == x && data.getFortresses().get(i).getY_positionAsInt() == y) {
-				synchronized(data.getFortresses()) {
+				synchronized(data) {
 					Fortress fort = data.getFortresses().get(i);
 					if(fort.getUser().getPort() == myport && winner == myport) {
 						fort.setAttacking_soldiers(attacking);

@@ -3,7 +3,7 @@ package client;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import data.Sequence_Number;
-import data.Parameter;
+import data.Parameters;
 
 
 
@@ -37,7 +37,7 @@ public class Alive_Message extends Thread {
 	public void run() {
 		while(send_alive_messages.get()) {
 			try {
-				if(counter < Parameter.max_alive_counter) {
+				if(counter < Parameters.max_alive_counter) {
 					Thread.sleep(5000);
 					sender = new Client_Sender(this.serverport, this.myport, seq, world_id);
 					sender.setMessage_number(3);

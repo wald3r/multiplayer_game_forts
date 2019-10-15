@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import data.Parameter;
+import data.Parameters;
 import data.Fortress;
+import data.Message_Queue;
 import data.Sequence_Number;
 import data.User;
 
@@ -21,6 +22,8 @@ public class Check_Timeout extends Thread {
 	private int myport;
 	private Sequence_Number seq;
 	public AtomicBoolean close_server = new AtomicBoolean(false);
+	private Message_Queue<Special_Settings> settings_queue;
+	private List<Special_Settings> settings_list = new ArrayList<Special_Settings>();
 	private int id;
 	
 	public Check_Timeout(int myport, Server_Data data, Sequence_Number seq, int id) {
@@ -53,15 +56,17 @@ public class Check_Timeout extends Thread {
 		
 		try {
 			while(true) {
-				Thread.sleep(Parameter.check_timeout);
+				Thread.sleep(Parameters.check_timeout);
 				List<User> deleteduser = new ArrayList<User>();
 				synchronized(data.getUsers()) {
 					for(int i = 0; i < data.getUsers().size(); i++) {
 						if(data.getUsers().get(i).isAlive()) {
 							data.getUsers().get(i).setAlive(false);
 						}else {
-							deleteduser.add(data.getUsers().get(i));
+							User to_delete = data.getUsers().get(i);
+							deleteduser.add(to_delete);
 							data.players--;
+							stop_sending_special_settings(to_delete);
 							System.out.println("Player "+data.getUsers().get(i).getPort()+" disconnected!");
 						}
 					}
@@ -82,6 +87,19 @@ public class Check_Timeout extends Thread {
 		}
 	}
 	
+	
+	public void stop_sending_special_settings(User to_delete) throws InterruptedException {
+		Special_Settings set;
+		while((set = settings_queue.messages.poll()) != null) {
+			if(set.getServerport() == to_delete.getPort()){
+				set.keep_running.set(false);
+			}else {
+				settings_list.add(set);
+			}	
+		}
+		settings_queue.messages.addAll(settings_list);
+	}
+	
 	/**
 	 * inform players of changes
 	 * @param fortress
@@ -95,6 +113,14 @@ public class Check_Timeout extends Thread {
 				System.out.println("Shutting down timeout.");
 			}
 		}
+	}
+
+	public Message_Queue<Special_Settings> getSettings_queue() {
+		return settings_queue;
+	}
+
+	public void setSettings_queue(Message_Queue<Special_Settings> settings_queue) {
+		this.settings_queue = settings_queue;
 	}
 	
 }
